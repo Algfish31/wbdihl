@@ -14,9 +14,15 @@ async function loadNavbar() {
 
     const navLink = "color: #c3c8cf; text-decoration: none; font-weight: 500; font-size: 0.98em; transition: color 0.15s;";
 
-    const listSwapLink = isImpossibleList
-        ? `<a href="https://webdemonlist.org" style="${navLink}">Main List</a>`
-        : `<a href="https://impossible.webdemonlist.org" style="${navLink}">ILL</a>`;
+    const currentHost = window.location.host; 
+    let listSwapLink = "";
+
+    if (isImpossibleList) {
+        const mainHost = currentHost.replace(/^impossible\./, '');
+        listSwapLink = `<a href="//${mainHost}" style="${navLink}">Main List</a>`;
+    } else {
+        listSwapLink = `<a href="//impossible.${currentHost}" style="${navLink}">ILL</a>`;
+    }
 
     let userSection = `
         <a href="/login" style="color: #c3c8cf; text-decoration: none; margin-right: 18px; font-weight: 600;">Login</a>
@@ -87,34 +93,40 @@ async function loadFooter() {
         footerContainer.id = 'global-footer';
         document.body.appendChild(footerContainer);
     }
-    
-    const isImpossibleList = window.location.hostname.includes('impossible');
 
+    // Modern spacing separation from page bounds
     footerContainer.style.width = "100%";
+    footerContainer.style.display = "flex";
+    footerContainer.style.justifyContent = "center";
+    footerContainer.style.borderTop = "1px solid var(--border, #222)";
+    footerContainer.style.marginTop = "50px";
+    footerContainer.style.backgroundColor = "var(--surface, #161616)";
+    
     footerContainer.innerHTML = `
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>Info</h3>
-                <a href="/about">About WBDL</a>
-                <a href="/guidelines">Submission Rules</a>
-                <a href="/leaderboard">Leaderboard</a>
-                <a href="/changelog">List Changes</a>
-                <a href="/staff">Staff</a>
+        <div class="footer-content" style="display: flex; justify-content: space-around; gap: 40px; flex-wrap: wrap; width: 100%; max-width: 900px; padding: 30px 20px; box-sizing: border-box;">
+            
+            <div class="footer-section" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 160px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 0.82em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text, #fff); font-family: var(--font-display), sans-serif; font-weight: 700; opacity: 0.9;">Info</h3>
+                <a href="/about" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">About WBDL</a>
+                <a href="/guidelines" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">Submission Rules</a>
+                <a href="/leaderboard" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">Leaderboard</a>
+                <a href="/changelog" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">List Changes</a>
+                <a href="/staff" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 0; transition: color 0.15s;">Staff</a>
             </div>
             
-            <div class="footer-section">
-                <h3>Socials</h3>
-                <a href="https://discord.gg/Pz8TehUPmP" target="_blank">Discord Server</a>
-                <a href="https://youtube.com/@lasokar" target="_blank">YouTube</a>
-                <a href="https://reddit.com/user/lasokar" target="_blank">Reddit</a>
+            <div class="footer-section" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 160px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 0.82em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text, #fff); font-family: var(--font-display), sans-serif; font-weight: 700; opacity: 0.9;">Socials</h3>
+                <a href="https://discord.gg/Pz8TehUPmP" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">Discord Server</a>
+                <a href="https://youtube.com/@lasokar" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">YouTube</a>
+                <a href="https://reddit.com/user/lasokar" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 0; transition: color 0.15s;">Reddit</a>
             </div>
 
-            <div class="footer-section">
-                <h3>Credits</h3>
-                <a href="https://www.youtube.com/@RobTopGames" target="_blank">RobTop Games</a>
-                <a href="https://geometrydash.com" target="_blank">Geometry Dash</a>
-                <a href="https://github.com/brokemutt/gdweb" target="_blank">GDWeb</a>
-                <a href="https://github.com/web-dashers/web-dashers.github.io" target="_blank">Web Dashers</a>
+            <div class="footer-section" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 160px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 0.82em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text, #fff); font-family: var(--font-display), sans-serif; font-weight: 700; opacity: 0.9;">Credits</h3>
+                <a href="https://www.youtube.com/@RobTopGames" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">RobTop Games</a>
+                <a href="https://geometrydash.com" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">Geometry Dash</a>
+                <a href="https://github.com/brokemutt/gdweb" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">GDWeb</a>
+                <a href="https://github.com/web-dashers/web-dashers.github.io" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 0; transition: color 0.15s;">Web Dashers</a>
             </div>
         </div>
     `;
