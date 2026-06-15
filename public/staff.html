@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .page-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .page-content h1 {
+            text-align: center;
+            color: var(--text);
+            font-size: 2.6em;
+            margin-bottom: 50px;
+        }
+
+        .staff-section {
+            margin-bottom: 40px;
+        }
+
+        .staff-section h2 {
+            font-size: 1.05em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rank-owner { color: var(--accent); }
+        .rank-admin { color: #4dc4ff; }
+        .rank-moderator { color: var(--danger); }
+        body.impossible-list .rank-owner { color: var(--text); }
+
+        .staff-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .staff-card {
+            background: var(--surface);
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            width: fit-content;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .staff-card:hover {
+            background: var(--surface-2);
+            border-color: #3a414a;
+        }
+
+        .staff-badge {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .staff-card a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1em;
+            white-space: nowrap;
+        }
+
+        .staff-card a:hover {
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .page-content h1 { font-size: 2.1em; margin-bottom: 35px; }
+            .staff-flex { justify-content: center; }
+            .staff-card { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div id="global-nav"></div>
+
+    <main class="page-content">
+        <h1>WBDL Staff</h1>
+
+        <div id="staff-container"></div>
+    </main>
+
+    <script src="/nav.js"></script>
+    <script>
+        const isImpossibleList = window.location.hostname.includes('impossible');
+
+        if (isImpossibleList) {
+            document.body.classList.add('impossible-list');
+        }
+
+        async function loadStaff() {
+            try {
+                const res = await fetch('/api/staff');
+                const data = await res.json();
+                const container = document.getElementById('staff-container');
+
+                const sections = [
+                    { title: 'Owner', key: 'owners', class: 'rank-owner', badge: 'assets/eldermoderator.png' },
+                    { title: 'Admins', key: 'admins', class: 'rank-admin', badge: 'assets/eldermoderator.png' },
+                    { title: 'Moderators', key: 'moderators', class: 'rank-moderator', badge: 'assets/moderator.png' }
+                ];
+
+                container.innerHTML = sections.map(section => {
+                    const members = data[section.key];
+                    if (!members || members.length === 0) return ''; 
+
+                    return `
+                        <div class="staff-section">
+                            <h2 class="${section.class}">${section.title}</h2>
+                            <div class="staff-flex">
+                                ${members.map(m => `
+                                    <div class="staff-card">
+                                        <img src="/${section.badge}" class="staff-badge" alt="Badge">
+                                        <a href="/profile?user=${m.username}">${m.username}</a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Failed to load staff profiles:", err);
+            }
+        }
+
+        loadStaff();
+    </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .page-content {
+            flex: 1 0 auto;
+            width: 100%;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 50px 20px 120px;
+            box-sizing: border-box;
+        }
+
+        .profile-header {
+            position: relative;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            border-bottom: 3px solid var(--border);
+            margin-bottom: 36px;
+            text-align: center;
+        }
+
+        .profile-header h1 {
+            margin: 0;
+            font-size: 2.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .user-id {
+            display: block;
+            color: var(--text-faint);
+            font-size: 0.34em;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .mod-badge {
+            height: 38px;
+            width: auto;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 24px;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .record-card {
+            background: var(--surface);
+            padding: 18px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .record-card:hover { background: var(--surface-2); }
+
+        .level-link { color: var(--text); text-decoration: none; font-weight: 600; }
+        .level-link:hover { color: var(--accent); }
+
+        .points-tag { color: var(--accent); font-family: var(--font-display); }
+        .rank-tag { color: var(--text-muted); margin-right: 10px; font-weight: 600; }
+
+        .completion { border-left-color: var(--accent); }
+        .progress { border-left-color: #d99a2b; }
+
+        h3 { color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; font-size: 1.3em; }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-link:hover { color: var(--text); }
+
+        .leaderboard-pos {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            padding: 6px 13px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+        }
+
+        .leaderboard-pos img {
+            height: 22px;
+            width: auto;
+        }
+
+        .leaderboard-pos span {
+            font-family: var(--font-display);
+            font-size: 1em;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="global-nav"></div>
+
+    <main class="page-content">
+        <div id="profile-display" style="display: none;">
+            <div class="profile-header" id="header-box">
+                <div id="leaderboard-tag" class="leaderboard-pos" style="display: none;">
+                    <img id="trophy-icon" src="" alt="Trophy">
+                    <span id="leaderboard-rank">#0</span>
+                </div>
+                <h1 id="user-name-container">
+                    <img id="role-badge" src="" class="mod-badge" style="display:none;">
+                    <div>
+                        <span id="user-name">Loading...</span>
+                        <span id="user-id-display" class="user-id"></span>
+                    </div>
+                </h1>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Points</span>
+                        <span id="total-points" class="points-tag" style="font-size: 1.5em;">0.00</span>
+                    </div>
+                    <div class="stat-item" id="levels-beaten-box">
+                        <span class="stat-label">Levels Beaten</span>
+                        <span id="demon-count" style="font-size: 1.5em; font-weight: bold;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Records</h3>
+            <div id="records-list"></div>
+        </div>
+
+        <div id="error-display" style="display: none; text-align: center; margin-top: 50px;">
+            <h1 style="color: #ff4444;">User Not Found</h1>
+            <p>The player you are looking for doesn't exist...</p>
+        </div>
+
+        <a href="/" class="back-link">Return to List</a>
+    </main>
+
+    <script src="/nav.js"></script>
+    <script>
+        const isImpossibleList = window.location.hostname.includes('impossible');
+
+        if (isImpossibleList) {
+            document.body.classList.add('impossible-list');
+            const levelsBeatenBox = document.getElementById('levels-beaten-box');
+            if (levelsBeatenBox) {
+                levelsBeatenBox.style.display = 'none';
+            }
+        }
+
+        async function loadProfile() {
+            const params = new URLSearchParams(window.location.search);
+            const username = params.get('user');
+            
+            if (!username) {
+                window.location.href = "/";
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/profile/${username}`);
+                if (res.status === 404) {
+                    document.getElementById('error-display').style.display = 'block';
+                    return;
+                }
+
+                const data = await res.json();
+                document.getElementById('profile-display').style.display = 'block';
+                
+                const lbTag = document.getElementById('leaderboard-tag');
+                const lbIcon = document.getElementById('trophy-icon');
+                const lbRankText = document.getElementById('leaderboard-rank');
+                
+                const rank = parseInt(data.leaderboardRank);
+                const totalPoints = parseFloat(data.totalPoints);
+
+                if (totalPoints > 0 && rank > 0) {
+                    lbTag.style.display = 'flex';
+                    lbRankText.innerText = `#${rank}`;
+
+                    let iconPath = '/assets/trophies/topEveryone.png';
+                    if (rank === 1) iconPath = '/assets/trophies/top1.png';
+                    else if (rank === 2) iconPath = '/assets/trophies/top2.png';
+                    else if (rank === 3) iconPath = '/assets/trophies/top3.png';
+                    else if (rank <= 10) iconPath = '/assets/trophies/top10.png';
+                    else if (rank <= 25) iconPath = '/assets/trophies/top25.png';
+                    else if (rank <= 100) iconPath = '/assets/trophies/top100.png';
+
+                    lbIcon.src = iconPath;
+                } else {
+                    lbTag.style.display = 'none';
+                }
+
+                const nameEl = document.getElementById('user-name');
+                const badgeEl = document.getElementById('role-badge');
+                const headerBox = document.getElementById('header-box');
+                
+                nameEl.innerText = data.username;
+
+                if (data.role === 'owner') {
+                    nameEl.style.color = '#00e676';
+                    badgeEl.src = '/assets/eldermoderator.png';
+                    badgeEl.style.display = 'block';
+                    headerBox.style.borderBottomColor = '#00e676';
+                } else if (data.role === 'admin') {
+                    nameEl.style.color = '#55acee';
+                    badgeEl.src = '/assets/eldermoderator.png';
+                    badgeEl.style.display = 'block';
+                    headerBox.style.borderBottomColor = '#55acee';
+                } else if (data.role === 'moderator') {
+                    nameEl.style.color = '#ff4444';
+                    badgeEl.src = '/assets/moderator.png';
+                    badgeEl.style.display = 'block';
+                    headerBox.style.borderBottomColor = '#ff4444';
+                } else {
+                    nameEl.style.color = 'white';
+                    badgeEl.style.display = 'none';
+                    headerBox.style.borderBottomColor = '#333';
+                }
+
+                document.getElementById('user-id-display').innerText = `ID: ${data.userId || 'N/A'}`;
+                document.getElementById('total-points').innerText = data.totalPoints;
+                
+                const completions = data.records.filter(r => parseInt(r.percentage) === 100).length;
+                document.getElementById('demon-count').innerText = completions;
+
+                const list = document.getElementById('records-list');
+                if (data.records.length === 0) {
+                    list.innerHTML = "<p style='color: #666; text-align: center; padding: 20px;'>This user hasn't submitted any records yet.</p>";
+                } else {
+                    list.innerHTML = data.records.map(r => {
+                        const is100 = parseInt(r.percentage) === 100;
+                        let textPercColor = "";
+
+                        if (is100) {
+                            textPercColor = isImpossibleList ? "#ff4444" : "#00e676";
+                        } else {
+                            textPercColor = isImpossibleList ? "#ff6666" : "#ffaa00";
+                        }
+
+                        const borderClass = is100 ? 'completion' : (isImpossibleList ? '' : 'progress');
+
+                        return `
+                            <div class="record-card ${borderClass}">
+                                <div>
+                                    <span class="rank-tag">#${r.position}</span>
+                                    <a href="/demon/${r.id}" class="level-link">
+                                        <span class="b">${r.name}</span>
+                                    </a>
+                                    <span style="color: ${textPercColor}; font-size: 0.9em;">
+                                        (${r.percentage}%)
+                                    </span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 20px;">
+                                    <span class="points-tag">${r.points} pts</span>
+                                    <a href="${r.video_url}" target="_blank"
+                                       style="color: var(--text-muted); text-decoration: none; font-size: 0.85em; border: 1px solid var(--border); padding: 6px 12px; border-radius: var(--radius-sm);">
+                                         Watch
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error("Failed to load profile:", err);
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | WBDL</title>
+    <link class="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+    
+    <style>
+        :root {
+            --error: #ff5252;
+            --card: #181b1e;
+        }
+
+        .page-content {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 { font-size: 2.2em; margin-bottom: 6px; }
+        h2 { border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 8px; font-size: 1.4em; }
+
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-top: 24px;
+        }
+        .tab {
+            padding: 12px 22px;
+            background: transparent;
+            cursor: pointer;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            font-weight: 600;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            border-bottom: none;
+        }
+        .tab.active {
+            background: var(--surface);
+            color: var(--accent);
+            border-color: var(--border);
+        }
+        .tab-content {
+            background: var(--surface);
+            padding: 26px;
+            border-radius: 0 var(--radius) var(--radius) var(--radius);
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .tab-content.active { display: block; }
+
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            margin: 8px 0;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        label { font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        button {
+            padding: 11px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.15s, opacity 0.15s;
+        }
+
+        .btn-add { background: var(--accent); color: #000; width: 100%; margin-top: 12px; font-size: 0.95em; }
+        .btn-add:hover { background: var(--accent-hover); }
+        .btn-accept { background: var(--accent); color: #000; }
+        .btn-accept:hover { background: var(--accent-hover); }
+
+        .btn-accept:disabled {
+            background: var(--surface-2) !important;
+            color: var(--text-faint) !important;
+            cursor: not-allowed !important;
+        }
+
+        .btn-reject { background: transparent; border: 1px solid var(--error); color: var(--error); }
+        .btn-reject:hover { background: var(--error); color: #fff; }
+        .btn-delete { background: none; border: 1px solid var(--error); color: var(--error); font-size: 11px; }
+        .btn-delete:hover { background: var(--error); color: #fff; }
+
+        .item-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+        }
+        .verif-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .nav-back { display: inline-block; margin-bottom: 12px; color: var(--text-muted); text-decoration: none; font-size: 0.9em; }
+        .nav-back:hover { color: var(--accent); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="global-nav"></div>
+
+    <main class="page-content">
+        <a href="/" class="nav-back">Back to Main List</a>
+        <h1>Admin Panel</h1>
+
+        <div class="tabs">
+            <div class="tab active" onclick="openTab(event, 'levels-tab')">Manage Levels</div>
+            <div class="tab" id="verif-tab-button" onclick="openTab(event, 'verif-tab')">Pending Levels</div>
+        </div>
+
+        <section id="levels-tab" class="tab-content active">
+            <div id="add-level-section" class="hidden">
+                <h2>Add Level</h2>
+                <p style="font-size: 0.85em; color: #888; margin-bottom: 20px;">Adds a level to the list (duh)</p>
+                
+                <label>Level Name</label>
+                <input type="text" id="level-name" placeholder="Stereo Madness">
+                
+                <label>Creator</label>
+                <input type="text" id="level-author" placeholder="RobTop">
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>List Position</label>
+                        <input type="number" id="level-pos" placeholder="1">
+                    </div>
+                    <div style="flex: 1;" id="add-req-box">
+                        <label>Min. Req %</label>
+                        <input type="number" id="level-req" placeholder="e.g. 50">
+                    </div>
+                </div>
+
+                <label>GD Level ID</label>
+                <input type="number" id="level-id" placeholder="57436521">
+                
+                <button class="btn-add" onclick="addLevel()">Add to List</button>
+            </div>
+
+            <h3 id="placements-heading" style="margin-top: 40px; font-size: 1.1em; color: #888;">Manage Placements</h3>
+            <div id="admin-demon-list">Loading list...</div>
+        </section>
+
+        <section id="verif-tab" class="tab-content">
+            <h2 id="verif-tab-title">New Levels</h2>
+            <div id="pending-verifications">Loading levels...</div>
+        </section>
+    </main>
+
+    <script src="/nav.js"></script>
+    <script>
+        let currentUser = null;
+        const isImpossibleList = window.location.hostname.includes('impossible');
+
+        function setupListLabels() {
+            const tabButton = document.getElementById('verif-tab-button');
+            const tabTitle = document.getElementById('verif-tab-title');
+            
+            if (isImpossibleList) {
+                const addReqBox = document.getElementById('add-req-box');
+                if (addReqBox) addReqBox.style.display = 'none';
+            } else {
+                if (tabButton) tabButton.innerText = "Pending Verifications";
+                if (tabTitle) tabTitle.innerText = "Pending Verifications";
+            }
+        }
+
+        async function checkPermissions() {
+            try {
+                const res = await fetch('/api/me');
+                if (res.ok) {
+                    currentUser = await res.json();
+                    
+                    if (currentUser.role === 'owner') {
+                        document.getElementById('add-level-section').classList.remove('hidden');
+                        document.getElementById('placements-heading').style.marginTop = "40px";
+                    } else {
+                        document.getElementById('placements-heading').style.marginTop = "0px";
+                    }
+                }
+            } catch (err) {
+                console.error("Error checking permissions", err);
+            }
+        }
+
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+
+            if(tabName === 'verif-tab') loadVerifications();
+            if(tabName === 'levels-tab') loadAdminList();
+        }
+
+        async function loadAdminList() {
+            const res = await fetch('/api/demons');
+            const demons = await res.json();
+            const container = document.getElementById('admin-demon-list');
+            
+            const showDelete = currentUser && currentUser.role === 'owner';
+
+            container.innerHTML = demons.map(d => `
+                <div class="item-card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div><span class="b">#${d.position}</span> ${d.name}</div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="move-to-${d.id}" value="${d.position}" style="width: 60px; margin: 0; height: 35px;">
+                        <button class="btn-accept" onclick="moveLevel(${d.id}, ${d.position})">Move</button>
+                        <button class="btn-delete ${showDelete ? '' : 'hidden'}" onclick="deleteLevel(${d.id}, ${d.position})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadVerifications() {
+            const res = await fetch('/api/admin/pending-verifications');
+            const list = await res.json();
+            const container = document.getElementById('pending-verifications');
+
+            if(list.length === 0) {
+                const emptyMessage = isImpossibleList ? "No pending levels." : "No pending verifications.";
+                container.innerHTML = `<p style='color: #666;'>${emptyMessage}</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(v => {
+                const isOwnVerification = currentUser && currentUser.username.toLowerCase() === v.username.toLowerCase();
+
+                const reqHTML = isImpossibleList ? '' : `
+                    <div>
+                        <label>Min. Requirement %</label>
+                        <input type="number" id="v-req-${v.id}" placeholder="e.g. 50">
+                    </div>
+                `;
+
+                return `
+                    <div class="item-card" id="v-card-${v.id}" data-username="${v.username}">
+                        <div style="margin-bottom: 15px;">
+                            <span style="color: #888;">Submitted by:</span> <span class="b">${v.username}</span>
+                            ${isOwnVerification ? '<span style="color: var(--error); margin-left:10px;">(Your Submission)</span>' : ''}
+                            <br><a href="${v.video_url}" target="_blank" style="color: var(--accent); font-size: 0.9em;">Verification Video</a>
+                            <br><a href="http://web-dashers.github.io/?id=${v.level_id}" target="_blank" style="color: var(--accent); font-size: 0.9em;">Play Level</a>
+                        </div>
+
+                        <div class="verif-grid">
+                            <div>
+                                <label>Level Name</label>
+                                <input type="text" id="v-name-${v.id}" value="${v.level_name}">
+                            </div>
+                            <div>
+                                <label>Author</label>
+                                <input type="text" id="v-author-${v.id}" value="${v.level_author}">
+                            </div>
+                            <div>
+                                <label>Level ID</label>
+                                <input type="number" id="v-id-${v.id}" value="${v.level_id}">
+                            </div>
+                            ${reqHTML}
+                            <div>
+                                <label>Placement</label>
+                                <input type="number" id="v-pos-${v.id}" placeholder="Their Placement: ${v.placement_opinion || 1}">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-accept" style="flex: 2;" 
+                                ${isOwnVerification ? 'disabled' : ''} 
+                                onclick="approveVerification(${v.id})">
+                                ${isOwnVerification ? 'you cannot approve ur own!!!' : 'Approve'}
+                            </button>
+                            <button class="btn-reject" style="flex: 1;" onclick="rejectVerification(${v.id})">Reject</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function approveVerification(id) {
+            let reqVal = 0;
+
+            if (!isImpossibleList) {
+                const reqInput = document.getElementById(`v-req-${id}`);
+                if (reqInput) reqVal = reqInput.value;
+                if (!reqVal) return alert("Please input a minimum requirement percentage.");
+            }
+
+            const payload = {
+                name: document.getElementById(`v-name-${id}`).value,
+                author: document.getElementById(`v-author-${id}`).value,
+                level_id: document.getElementById(`v-id-${id}`).value,
+                requirement: parseInt(reqVal),
+                position: document.getElementById(`v-pos-${id}`).value
+            };
+
+            if(!payload.position) return alert("Please set a final position.");
+
+            const demonRes = await fetch('/api/admin/add-demon', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            if (!demonRes.ok) {
+                const err = await demonRes.json();
+                return alert("Failed to add demon: " + err.error);
+            }
+
+            const demonsFetch = await fetch('/api/demons');
+            const demons = await demonsFetch.json();
+            const newDemon = demons.find(d => d.level_id == payload.level_id);
+
+            const verifRes = await fetch('/api/admin/approve-verification', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ verifId: id, demonId: newDemon.id })
+            });
+
+            if (verifRes.ok) {
+                alert("Success! Level added.");
+                loadVerifications();
+            }
+        }
+
+        async function rejectVerification(id) {
+            const reason = prompt("Reason for rejection:");
+            if(reason === null) return;
+
+            const res = await fetch('/api/admin/reject-verification', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ verifId: id, reason })
+            });
+
+            if(res.ok) loadVerifications();
+        }
+
+        async function addLevel() {
+            let reqVal = 0;
+
+            if (!isImpossibleList) {
+                reqVal = document.getElementById('level-req').value;
+                if (!reqVal) return alert("Please input a minimum requirement percentage.");
+            }
+
+            const payload = {
+                name: document.getElementById('level-name').value,
+                author: document.getElementById('level-author').value,
+                position: parseInt(document.getElementById('level-pos').value),
+                level_id: document.getElementById('level-id').value,
+                requirement: parseInt(reqVal)
+            };
+
+            if(!payload.name || !payload.position) return alert("Name and Position are required.");
+
+            const res = await fetch('/api/admin/add-demon', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                alert("Level added!");
+                location.reload();
+            } else {
+                const data = await res.json();
+                alert(data.error);
+            }
+        }
+
+        async function moveLevel(id, oldPos) {
+            const newPos = parseInt(document.getElementById(`move-to-${id}`).value);
+            if (!newPos || newPos === oldPos) return;
+
+            const res = await fetch('/api/admin/move-demon', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id, oldPosition: oldPos, newPosition: newPos })
+            });
+
+            if (res.ok) location.reload();
+            else alert("Error moving level");
+        }
+
+        async function deleteLevel(id, pos) {
+            if(!confirm(`Delete this level?`)) return;
+            await fetch('/api/admin/delete-demon', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id, position: pos })
+            });
+            location.reload();
+        }
+
+        async function init() {
+            setupListLabels();
+            await checkPermissions();
+            loadAdminList();
+        }
+        
+        init();
+    </script>
+</body>
+</html>

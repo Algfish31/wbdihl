@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Settings | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+<style>
+    .settings-container,
+    .settings-container * {
+        box-sizing: border-box;
+    }
+
+    .settings-container {
+        max-width: 480px;
+        margin: 60px auto;
+        padding: 30px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+    }
+
+    .settings-container .section {
+        margin-bottom: 26px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .settings-container .section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .settings-container h2 {
+        color: var(--text);
+        margin: 0 0 14px 0;
+        font-size: 1.3rem;
+    }
+
+    .settings-container label {
+        display: block;
+        margin: 12px 0 5px;
+        color: var(--text-muted);
+        font-size: 0.78em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .settings-container input {
+        width: 100%;
+        padding: 12px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: var(--radius-sm);
+        font-size: 0.95rem;
+        font-family: var(--font-body);
+        transition: border-color 0.15s;
+    }
+
+    .settings-container input:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+
+    .settings-container button {
+        width: 100%;
+        padding: 13px;
+        background: var(--accent);
+        border: none;
+        color: #000;
+        font-family: var(--font-body);
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        margin-top: 16px;
+        font-size: 0.95rem;
+        transition: background-color 0.15s;
+    }
+
+    .settings-container button:hover {
+        background: var(--accent-hover);
+    }
+
+    .settings-container .btn-danger {
+        background: transparent;
+        border: 1px solid var(--danger);
+        color: var(--danger);
+    }
+
+    .settings-container .btn-danger:hover {
+        background: var(--danger);
+        color: #fff;
+    }
+
+    .settings-container .msg {
+        margin-top: 12px;
+        font-size: 0.9em;
+        text-align: center;
+        min-height: 1.2em;
+    }
+</style>
+</head>
+<body>
+    <div id="global-nav"></div>
+    <div class="settings-container">
+        <div class="section">
+            <h2>Change Username</h2>
+            <input type="text" id="new-username" placeholder="New Username">
+            <button onclick="updateUsername()">Update Username</button>
+            <div id="user-msg" class="msg"></div>
+        </div>
+
+<div class="section">
+    <h2>Change Password</h2>
+    <label>Current Password</label>
+    <input type="password" id="pass-current-password" placeholder="Current Password">
+    
+    <label>New Password</label>
+    <input type="password" id="new-password" placeholder="New Password">
+    <input type="password" id="confirm-password" placeholder="Confirm New Password">
+    
+    <button onclick="updatePassword()">Update Password</button>
+    <div id="pass-msg" class="msg"></div>
+</div>
+
+        <div class="section" style="border: none;">
+            <h2 style="color: var(--danger);">Danger Zone</h2>
+            <p style="font-size: 0.85em; color: var(--text-muted);">Deleting your account is permanent and removes all your records.</p>
+            <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
+        </div>
+    </div>
+
+    <script src="/nav.js"></script>
+    <script>
+        async function updateUsername() {
+            const username = document.getElementById('new-username').value;
+            const res = await fetch('/api/settings/username', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username })
+            });
+            const data = await res.json();
+            document.getElementById('user-msg').innerText = data.message || data.error;
+            document.getElementById('user-msg').style.color = res.ok ? "#00e676" : "#ff4444";
+        }
+
+async function updatePassword() {
+    const currentPassword = document.getElementById('pass-current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirm = document.getElementById('confirm-password').value;
+
+    if (newPassword !== confirm) {
+        return showMessage('pass-msg', "New passwords do not match.", true);
+    }
+
+    const res = await fetch('/api/settings/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+    });
+
+    const data = await res.json();
+    handleResponse(res, data, 'pass-msg');
+}
+
+function showMessage(elementId, text, isError) {
+    const el = document.getElementById(elementId);
+    el.innerText = text;
+    el.style.color = isError ? "#ff4444" : "#00e676";
+}
+
+function handleResponse(res, data, elementId) {
+    if (res.ok) {
+        showMessage(elementId, data.message, false);
+        document.querySelectorAll('input[type="password"]').forEach(i => i.value = '');
+    } else {
+        showMessage(elementId, data.error || "An error occurred", true);
+    }
+}
+
+async function deleteAccount() {
+    // 1. Double-check intent
+    const doubleCheck = confirm("Are you sure? This will permanently delete your account and all your records.");
+    if (!doubleCheck) return;
+
+    const password = prompt("Please enter your password to confirm deletion:");
+    if (!password) return;
+
+    const res = await fetch('/api/settings/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        alert("Account successfully deleted...");
+        window.location.href = "/";
+    } else {
+        alert(data.error || "Could not delete account.");
+    }
+}
+    </script>
+</body>
+</html>

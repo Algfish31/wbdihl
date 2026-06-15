@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Record | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+<style>
+.page-content {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.submit-box {
+    background: var(--surface);
+    padding: 38px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 480px;
+}
+
+.submit-box h2 {
+    margin: 0 0 22px 0;
+    color: var(--text);
+    font-size: 1.6em;
+    text-align: center;
+}
+
+.rules-note {
+    background: var(--bg);
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.88em;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    line-height: 1.5;
+}
+
+.rules-note a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.rules-note a:hover {
+    text-decoration: underline;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.submit-box label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.78em;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.submit-box input,
+.submit-box select {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    font-size: 0.95em;
+    font-family: var(--font-body);
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.submit-box input:focus,
+.submit-box select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.submit-box button {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    border: none;
+    color: #000;
+    font-family: var(--font-body);
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    border-radius: var(--radius-sm);
+    font-size: 1em;
+    transition: background-color 0.15s;
+}
+
+.submit-box button:hover {
+    background: var(--accent-hover);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text);
+    -webkit-box-shadow: 0 0 0px 1000px var(--bg) inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 22px;
+}
+
+.tab {
+    flex: 1;
+    padding: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.15s;
+}
+
+.tab.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+}
+
+.hidden { display: none; }
+
+.form-group span {
+    display: block;
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    margin-top: -2px;
+    line-height: 1.4;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+}
+</style>
+</head>
+<body>
+
+    <div id="global-nav"></div>
+
+<main class="page-content">
+    <div class="submit-box">
+        <div class="tabs">
+            <div class="tab active" id="tab-progress" onclick="switchTab('progress')">Level Progress</div>
+            <div class="tab" id="tab-verif" onclick="switchTab('verif')">Verification</div>
+        </div>
+
+        <h2 id="form-title">Submit Record</h2>
+        
+        <div class="rules-note">
+            Please ensure your record follows the 
+            <a href="/guidelines" target="_blank">guidelines</a> 
+            before submitting.
+        </div>
+
+        <div id="form-progress">
+            <div class="form-group">
+                <label for="demon-select">Level</label>
+                <select id="demon-select"><option>Loading levels...</option></select>
+            </div>
+            <div class="form-group">
+                <label for="percentage">Percentage</label>
+                <input type="number" id="percentage" placeholder="e.g. 100" min="1" max="100">
+            </div>
+        </div>
+
+        <div id="form-verif" class="hidden">
+            <div class="form-group">
+                <label>Level Name</label>
+                <input type="text" id="v-name" placeholder="1st Level">
+            </div>
+            <div class="form-group">
+                <label>Level Creator</label>
+                <input type="text" id="v-author" placeholder="e.g. MindCap">
+            </div>
+            <div class="form-group">
+                <label>Level ID</label>
+                <input type="number" id="v-id" placeholder="57436521">
+            </div>
+            <div class="form-group">
+                <label>Personal Placement #</label>
+                <span>This likely won't be the final placement, but we do take this into consideration.</span>
+                <input type="number" id="v-opinion" placeholder="1">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="video-url" id="video-url-label">Video URL</label>
+            <input type="text" id="video-url" placeholder="https://youtube.com/watch?v=...">
+        </div>
+
+        <button onclick="handleFormSubmit()">Submit</button>
+    </div>
+</main>
+
+
+    <script src="/nav.js"></script>
+<script>
+    let demonList = [];
+    let currentTab = 'progress';
+    const isImpossibleList = window.location.hostname.includes('impossible');
+
+    function setupListLabels() {
+        const verifTab = document.getElementById('tab-verif');
+        if (isImpossibleList && verifTab) {
+            verifTab.innerText = "New Level";
+        }
+    }
+
+    function updateUrlLabel() {
+        const urlLabel = document.getElementById('video-url-label');
+        if (!urlLabel) return;
+
+        if (currentTab === 'progress') {
+            urlLabel.innerText = "Video URL";
+        } else {
+            if (isImpossibleList) {
+                urlLabel.innerText = "Showcase URL";
+            } else {
+                urlLabel.innerText = "Verification URL";
+            }
+        }
+    }
+
+    if (isImpossibleList) {
+        document.body.classList.add('impossible-list');
+    }
+    
+    setupListLabels();
+    updateUrlLabel();
+
+    function switchTab(type) {
+        currentTab = type;
+        
+        document.getElementById('tab-progress').classList.toggle('active', type === 'progress');
+        document.getElementById('tab-verif').classList.toggle('active', type === 'verif');
+        
+        document.getElementById('form-progress').classList.toggle('hidden', type !== 'progress');
+        document.getElementById('form-verif').classList.toggle('hidden', type !== 'verif');
+        
+        if (type === 'progress') {
+            document.getElementById('form-title').innerText = "Submit Record";
+        } else {
+            document.getElementById('form-title').innerText = isImpossibleList ? "Submit New Level" : "Submit Verification";
+        }
+        
+        updateUrlLabel();
+    }
+
+    async function checkAccess() {
+        try {
+            const res = await fetch('/api/me');
+            const user = await res.json();
+            if (!user.loggedIn) {
+                alert("You must be logged in to submit records!");
+                window.location.href = "/login";
+                return;
+            }
+            loadDemons();
+        } catch (err) {
+            console.error("Auth check failed");
+        }
+    }
+
+    async function loadDemons() {
+        try {
+            const res = await fetch('/api/demons');
+            demonList = await res.json();
+            const select = document.getElementById('demon-select');
+            
+            select.innerHTML = demonList.map(d => {
+                if (isImpossibleList) {
+                    return `<option value="${d.id}">${d.name}</option>`;
+                } else {
+                    const statusText = d.position > 75 
+                        ? "Extended" 
+                        : `Min: ${d.requirement}%`;
+                    return `<option value="${d.id}">#${d.position} - ${d.name} [${statusText}]</option>`;
+                }
+            }).join('');
+            
+            select.addEventListener('change', updatePercentageField);
+            updatePercentageField();
+        } catch (err) {
+            console.error("Failed to load demons");
+        }
+    }
+
+    async function handleFormSubmit() {
+        const videoUrl = document.getElementById('video-url').value;
+
+        if (!videoUrl) return alert("Please provide a video URL.");
+        if (!videoUrl.startsWith("http")) {
+            return alert("Please enter a valid URL (starting with http:// or https://)");
+        }
+
+        if (currentTab === 'progress') {
+            await submitStandardRecord(videoUrl);
+        } else {
+            await submitVerification(videoUrl);
+        }
+    }
+
+    async function submitStandardRecord(videoUrl) {
+        const demonId = document.getElementById('demon-select').value;
+        const percentage = parseInt(document.getElementById('percentage').value);
+
+        if (!percentage) return alert("Please enter a percentage.");
+
+        const selectedDemon = demonList.find(d => d.id == demonId);
+        if (percentage < selectedDemon.requirement) {
+            return alert(`This level requires at least ${selectedDemon.requirement}% for a record!`);
+        }
+
+        const res = await fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ demonId, percentage, videoUrl })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            alert("Record submitted for review! It will appear on the list once a list moderator approves it.");
+            window.location.href = "/";
+        } else {
+            alert(data.error || "Submission failed.");
+        }
+    }
+
+    async function submitVerification(videoUrl) {
+        const name = document.getElementById('v-name').value;
+        const author = document.getElementById('v-author').value;
+        const levelId = document.getElementById('v-id').value;
+        const opinion = document.getElementById('v-opinion').value;
+
+        if (!name || !author || !levelId || !opinion) {
+            return alert("Please fill in all required fields.");
+        }
+
+        const res = await fetch('/api/submit-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, author, levelId, opinion, videoUrl })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            alert("Submitted for review! The level will be added on the list once a list admin approves it.");
+            window.location.href = "/";
+        } else {
+            alert(data.error || "Submission failed.");
+        }
+    }
+
+    function updatePercentageField() {
+        const demonId = document.getElementById('demon-select').value;
+        const percentInput = document.getElementById('percentage');
+        const selectedDemon = demonList.find(d => d.id == demonId);
+
+        if (selectedDemon && selectedDemon.position > 75) {
+            percentInput.value = 100;
+            percentInput.readOnly = true;
+            percentInput.style.opacity = "0.6";
+            percentInput.style.cursor = "not-allowed";
+        } else {
+            percentInput.readOnly = false;
+            percentInput.style.opacity = "1";
+            percentInput.style.cursor = "text";
+            if (percentInput.value == 100) percentInput.value = ""; 
+        }
+    }
+
+    checkAccess();
+</script>
+</body>
+</html>

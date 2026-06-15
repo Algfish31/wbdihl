@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .auth-wrapper {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 90px 20px;
+        }
+
+        .auth-box {
+            background: var(--surface);
+            padding: 2.4rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 360px;
+            height: fit-content;
+        }
+        button {
+            width: 100%;
+            padding: 13px;
+            background: var(--accent);
+            border: none;
+            color: #000;
+            font-family: var(--font-body);
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 12px;
+            border-radius: var(--radius-sm);
+            transition: background-color 0.15s;
+        }
+        button:hover:not(:disabled) { background: var(--accent-hover); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        h2 { margin: 0 0 20px; text-align: center; color: var(--text); font-size: 1.7em; }
+        #auth-message { text-align: center; margin-bottom: 12px; font-size: 0.9em; min-height: 1.2em; font-weight: 600; }
+        input { width: 100%; padding: 12px 14px; margin: 8px 0; background: var(--bg); border: 1px solid var(--border); color: var(--text); box-sizing: border-box; border-radius: var(--radius-sm); font-size: 0.95em; transition: border-color 0.15s; }
+        input:focus { outline: none; border-color: var(--accent); }
+        .secondary-link { display: block; text-align: center; color: var(--text-muted); text-decoration: none; margin-top: 18px; font-size: 0.9em; }
+        .secondary-link:hover { color: var(--accent); }
+        .back-link { color: var(--text-faint); text-decoration: none; display: block; text-align: center; margin-top: 18px; font-size: 0.8em; }
+        .reset-link-container { display: flex; justify-content: flex-end; margin: 6px 0 8px; }
+        .reset-link { color: var(--text-muted); text-decoration: none; font-size: 0.8em; }
+        .reset-link:hover { color: var(--text); text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div id="global-nav"></div>
+    <main class="auth-wrapper">
+        <div class="auth-box">
+            <h2>Login</h2>
+            <div id="auth-message"></div>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <div class="reset-link-container">
+                <a href="/forgot-password" class="reset-link">Forgot password?</a>
+            </div>
+            <button onclick="handleLogin()">Login</button>
+            <a href="/register" class="secondary-link">Need an account? Register</a>
+            <a href="/" class="back-link">Back to List</a>
+        </div>
+    </main>
+    <script src="/nav.js"></script>
+    <script>
+        const msgDiv = document.getElementById('auth-message');
+        async function handleLogin() {
+	    const btn = document.querySelector('button');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (!username || !password) return (msgDiv.innerText = "Fill in all fields", msgDiv.style.color = "#ff4444");
+
+            btn.disabled = true;
+            const originalText = btn.innerText;
+            btn.innerText = "Loading...";
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (response.status === 429) {
+                    msgDiv.innerText = "Rate limited, try again later!";
+                    msgDiv.style.color = "#ff4444";
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    return;
+                }
+                const data = await response.json();
+                if (response.ok) {
+                    msgDiv.innerText = "Login successful!";
+                    msgDiv.style.color = "#00e676";
+                    setTimeout(() => window.location.href = "/", 1000);
+                } else {
+                    msgDiv.innerText = data.error;
+                    msgDiv.style.color = "#ff4444";
+        	    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
+            } catch (err) { 
+		msgDiv.innerText = "Server error";
+        	btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+</html>

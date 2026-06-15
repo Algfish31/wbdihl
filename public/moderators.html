@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderators | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+<style>
+    .page-content {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 50px 20px;
+    }
+
+    h2 {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 16px;
+        margin-bottom: 22px;
+        font-size: 1.5em;
+    }
+
+    .box {
+        background: var(--surface);
+        padding: 26px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #pending-records {
+        flex-grow: 1;
+    }
+
+    .item-card {
+        background: var(--bg);
+        padding: 18px 20px;
+        border-radius: var(--radius-sm);
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-left: 3px solid #d99a2b;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .item-card:hover {
+        background: var(--surface-2);
+    }
+
+    .item-card .b { color: var(--accent); font-size: 1.1em; }
+
+    button {
+        padding: 11px 22px;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.15s, opacity 0.15s;
+    }
+
+    .btn-accept { background: var(--accent); color: #000; margin-right: 8px; }
+    .btn-accept:hover { background: var(--accent-hover); }
+    .btn-reject { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+    .btn-reject:hover { background: var(--danger); color: #fff; }
+
+    .video-link {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9em;
+        display: inline-block;
+        margin-top: 6px;
+    }
+    .video-link:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+    <div id="global-nav"></div>
+    <main class="page-content">
+        <section class="box">
+            <h2>Pending Submissions</h2>
+            <div id="pending-records">Checking for new records...</div>
+        </section>
+    </main>
+
+    <script src="/nav.js"></script>
+    <script>
+        async function loadPending() {
+            const res = await fetch('/api/admin/pending');
+            if (!res.ok) {
+                document.body.innerHTML = `<h1 style="text-align:center; margin-top:50px; color:red;">Unauthorized</h1>`;
+                return;
+            }
+            const records = await res.json();
+            const container = document.getElementById('pending-records');
+            if (records.length === 0) {
+                container.innerHTML = "<p style='color:#666; text-align:center;'>No pending records! Yay :)</p>";
+                return;
+            }
+            container.innerHTML = records.map(rec => `
+                <div class="item-card">
+                    <div>
+                        <a href="/profile?user=${rec.username}" 
+               style="color: var(--accent); text-decoration: none; font-weight: bold; font-size: 1.1em;">
+               ${rec.username}
+            </a><br>
+                        <span>${rec.demon_name} (${rec.percentage}%)</span><br>
+                        <a href="${rec.video_url}" target="_blank" class="video-link">View Video</a>
+                    </div>
+                    <div>
+                        <button class="btn-accept" onclick="updateStatus(${rec.id}, 'accepted')">Accept</button>
+                        <button class="btn-reject" onclick="updateStatus(${rec.id}, 'rejected')">Deny</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+async function updateStatus(recordId, status) {
+    let reason = status === 'rejected' ? prompt("Reason for rejection:") : null;
+    
+    if (status === 'rejected' && reason === null) return;
+
+    try {
+        const res = await fetch('/api/admin/update-record', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ recordId, status, reason })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(`Record ${status} successfully.`);
+            loadPending();
+        } else {
+            alert("Error: " + (data.error || "Failed to update record."));
+        }
+    } catch (err) {
+        console.error("Fetch error:", err);
+        alert("A network error occurred. Check console for details.");
+    }
+}
+        loadPending();
+    </script>
+</body>
+</html>

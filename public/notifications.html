@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .noti-page-container { max-width: 760px; margin: 0 auto; padding: 50px 20px; min-height: 80vh; flex: 1 0 auto; }
+
+        .noti-card {
+            background: var(--surface);
+            padding: 18px 20px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border);
+        }
+
+        .noti-page-container h1 {
+            margin-bottom: 24px;
+            color: var(--text);
+            font-size: 2rem;
+        }
+
+        .noti-card.unread { border-left-color: var(--accent); background: var(--surface-2); }
+        .noti-card .meta { color: var(--text-muted); font-size: 0.82em; margin-bottom: 8px; }
+        .noti-card .content { font-size: 1em; line-height: 1.5; color: var(--text-muted); }
+
+        .content .b {
+            color: var(--text) !important;
+        }
+
+        .status-text { font-weight: 700; text-transform: uppercase; }
+        .accepted { color: var(--accent) !important; }
+        .rejected { color: var(--danger) !important; }
+    </style>
+</head>
+<body>
+    <div id="global-nav"></div>
+    <div class="noti-page-container">
+        <h1>Notifications</h1>
+        <div id="notifications-full-list">
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <script src="/nav.js"></script>
+    <script>
+        const isImpossibleList = window.location.hostname.includes('impossible');
+
+        if (isImpossibleList) {
+            document.body.classList.add('impossible-list');
+        }
+
+        async function loadFullNotifications() {
+            try {
+                const res = await fetch('/api/notifications');
+                const notifications = await res.json();
+                const container = document.getElementById('notifications-full-list');
+
+                if (notifications.length === 0) {
+                    container.innerHTML = "<p style='color:#666;'>You have no notifications yet.</p>";
+                    return;
+                }
+
+                container.innerHTML = notifications.map(n => {
+                    const date = new Date(n.created_at).toLocaleString();
+                    
+                    let message = '';
+
+                    if (n.type === 'verif_rejected' || n.type === 'rejected') {
+                        const levelName = n.type === 'verif_rejected' ? n.custom_text : n.level_name;
+                        const submissionType = n.type === 'verif_rejected' ? 'verification' : 'submission';
+                        message = `Your ${submissionType} for <span class="b">${levelName}</span> has been <span class="status-text rejected">rejected</span>.`;
+                    } else if (n.type === 'verif_accepted') {
+                        message = `Your verification for <span class="b">${n.level_name}</span> has been <span class="status-text accepted">accepted</span> and added to the list!`;
+                    } else if (n.type === 'accepted') {
+                        message = `Your submission for <span class="b">${n.level_name}</span> has been <span class="status-text accepted">accepted</span>.`;
+                    } else {
+                        message = `Your submission for <span class="b">${n.level_name}</span> has been <span class="status-text">${n.type}</span>.`;
+                    }
+                    
+                    const isAnyRejection = n.type === 'rejected' || n.type === 'verif_rejected';
+                    const reasonHtml = (isAnyRejection && n.reason) 
+                        ? `<div style="margin-top:10px; padding:12px 14px; background:var(--bg); border-left:3px solid var(--danger); border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:0.9em;">
+                             <span class="b" style="color: var(--text) !important;">Reason:</span> ${n.reason}
+                           </div>`
+                        : '';
+
+                    return `
+                        <div class="noti-card ${n.is_read ? '' : 'unread'}">
+                            <div class="meta">${date} • Sent by ${n.admin_name}</div>
+                            <div class="content">
+                                ${message}
+                                ${reasonHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                fetch('/api/notifications/read', { method: 'POST' });
+            } catch (err) {
+                console.error("Failed to load notifications:", err);
+            }
+        }
+        loadFullNotifications();
+    </script>
+</body>
+</html>

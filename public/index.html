@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WBDL | Web Browser Demon List</title>
+    <meta name="title" content="WBDL | Web Browser Demon List">
+    <meta name="description" content="The unofficial ranking for the hardest levels beaten in 'Geometry Dash: Try Me!'.">
+    <meta name="keywords" content="Geometry Dash, Demonlist, WBDL, Browser Geometry Dash, GD Try Me, Hardest Levels, geometrydash.com, web browser demonlist">
+    <meta name="author" content="Lasokar">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://webdemonlist.org/"> <meta property="og:title" content="WBDL | Web Browser Demon List">
+    <meta property="og:description" content="The unofficial ranking for the hardest levels beaten in 'Geometry Dash: Try Me!'.">
+    <meta property="og:image" content="/assets/icon.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://webdemonlist.org/">
+    <meta property="twitter:title" content="WBDL | Web Browser Demon List">
+    <meta property="twitter:description" content="The unofficial ranking for the hardest levels beaten in 'Geometry Dash: Try Me!'.">
+    <meta property="twitter:image" content="/assets/icon.png">
+
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    
+    <link rel="stylesheet" href="/style.css">
+    
+    <style>
+        .page-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px 20px 60px;
+        }
+
+        .list-header {
+            text-align: center;
+            padding: 50px 0 30px;
+        }
+
+        .list-header h1 {
+            font-size: 2.6em;
+            margin-bottom: 14px;
+            color: var(--accent);
+        }
+
+        .list-header p {
+            color: var(--text-muted);
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .demon-card {
+            background: var(--surface);
+            margin: 14px 0;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            border-radius: var(--radius);
+            transition: border-color 0.15s, background 0.15s;
+            overflow: hidden;
+        }
+
+        .demon-card:hover {
+            background: var(--surface-2);
+            border-color: var(--accent);
+        }
+
+        .thumbnail-box {
+            width: 220px;
+            height: 124px;
+            background: #000;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .thumbnail-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-body {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 16px 26px;
+            justify-content: space-between;
+        }
+
+        .card-main-content {
+            display: flex;
+            align-items: center;
+        }
+
+        .rank {
+            font-family: var(--font-display);
+            font-size: 2.4em;
+            margin-right: 22px;
+            color: var(--accent);
+            min-width: 64px;
+        }
+
+        .demon-info .b {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.15em;
+            color: var(--text);
+        }
+
+        .points-row {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+
+        .wr-badge {
+            font-family: var(--font-display);
+            font-size: 1.2em;
+            color: var(--accent);
+            background: var(--surface-2);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            margin-left: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .demon-card {
+                flex-direction: column;
+            }
+            .thumbnail-box {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 16/9;
+            }
+            .card-body {
+                padding: 20px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .card-main-content {
+                width: 100%;
+            }
+            .wr-badge {
+                align-self: flex-end;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="global-nav"></div>
+
+    <div class="page-content">
+        <header class="list-header">
+            <h1 id="headline-text">Welcome to the WBDL</h1>
+            <p id="subheadline-text">The Web Browser Demonlist Ranks the hardest levels completed on the "Geometry Dash: Try Me!" website.</p>
+        </header>
+
+        <div id="list-container">
+            <p style="text-align: center; color: #888;">Fetching levels...</p>
+        </div>
+    </div>
+
+    <script src="/nav.js"></script>
+    <script>
+        const isImpossibleList = window.location.hostname.includes('impossible');
+
+        if (isImpossibleList) {
+            document.body.classList.add('impossible-list');
+            
+            document.getElementById('headline-text').innerText = "Web Browser ILL";
+            document.getElementById('subheadline-text').innerText = "...the human limit of Web Dashers";
+        }
+
+        function getYTId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function loadDemons() {
+            try {
+                const response = await fetch('/api/demons');
+                const demons = await response.json();
+                const container = document.getElementById('list-container');
+                container.innerHTML = '';
+
+                demons.forEach(demon => {
+                    const ytId = getYTId(demon.showcase_link);
+                    const thumbUrl = ytId 
+                        ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` 
+                        : '/assets/missing-thumbnail.png';
+
+                    let sideContentHtml = "";
+
+                    if (isImpossibleList) {
+                        const records = demon.records || [];
+                        const bestPercentage = records.length > 0 
+                            ? Math.max(...records.map(r => r.percentage || 0)) 
+                            : 0;
+                        
+                        sideContentHtml = `<div class="wr-badge">WR: ${bestPercentage}%</div>`;
+                    } else {
+                        const fullPoints = 250 * Math.exp(-0.0263 * (demon.position - 1));
+                        const reqPoints = fullPoints / 10;
+                        let pointsHtml = "";
+
+                        if (demon.position > 75) {
+                            pointsHtml = `
+                                <span style="color: var(--accent); font-weight: 600;">${fullPoints.toFixed(2)}</span>
+                                <span>points</span>
+                            `;
+                        } else {
+                            pointsHtml = `
+                                <span style="color: var(--text); font-weight: 600;">${reqPoints.toFixed(2)}</span>
+                                <span>(${demon.requirement}%)</span>
+                                <span style="margin: 0 4px; opacity: 0.4;">—</span>
+                                <span style="color: var(--accent); font-weight: 600;">${fullPoints.toFixed(2)}</span>
+                                <span>(100%) points</span>
+                            `;
+                        }
+
+                        sideContentHtml = `
+                            <div class="points-row">
+                                ${pointsHtml}
+                            </div>
+                        `;
+                    }
+
+                    container.innerHTML += `
+                        <a href="/demon/${demon.id}" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="demon-card">
+                                <div class="thumbnail-box">
+                                    <img src="${thumbUrl}" alt="${demon.name} thumbnail">
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-main-content">
+                                        <span class="rank">#${demon.position}</span>
+                                        <div class="demon-info">
+                                            <span class="b">${demon.name}</span>
+                                            <div style="color: var(--text-muted); font-size: 0.85em; margin-top: 4px;">published by ${demon.author}</div>
+                                            ${!isImpossibleList ? sideContentHtml : ''}
+                                        </div>
+                                    </div>
+                                    ${isImpossibleList ? sideContentHtml : ''}
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                });
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('list-container').innerHTML = `<p style="color:red; text-align:center;">Failed to load list.</p>`;
+            }
+        }
+
+        loadDemons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Info | WBDL</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .page-content {
+            flex: 1 0 auto;
+            width: 100%;
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 50px 20px 75px;
+            box-sizing: border-box;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            background: #000;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+        }
+        .video-container iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+        }
+
+        .info-header { margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+        .info-header h1 { color: var(--accent); margin: 0; font-size: 2.2em; }
+        .info-header p { color: var(--text-muted); }
+        #level-id-tag {
+            background: var(--surface-2);
+            padding: 3px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+
+        #play-link {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 11px 22px;
+            background: var(--accent);
+            color: #000;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s;
+        }
+        #play-link:hover {
+            background: var(--accent-hover);
+        }
+
+        .record-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 18px; background: var(--surface); margin-bottom: 8px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        .record-row a { color: var(--text); text-decoration: none; font-weight: 600; }
+        .record-row a:hover { color: var(--accent); }
+        .record-row .proof { color: var(--text-muted); font-size: 0.9em; }
+        .record-row .proof:hover { color: var(--accent); }
+
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-size: 1em;
+            font-weight: 600;
+            transition: color 0.15s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: -1px;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .history-table th {
+            background: var(--surface-2);
+            padding: 13px;
+            text-align: left;
+            color: var(--text-muted);
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .history-table td { padding: 13px; border-bottom: 1px solid var(--border); }
+
+        .row-up { background-color: rgba(0, 230, 118, 0.08); color: #7ff0b3; }
+        .row-down { background-color: rgba(255, 82, 82, 0.08); color: #ff9999; }
+        .row-added { background-color: rgba(255, 255, 255, 0.03); }
+    </style>
+</head>
+<body>
+    <div id="global-nav"></div>
+
+    <main class="page-content" id="main-content" style="display:none;">
+        <div class="info-header">
+            <h1 id="demon-name">Level Name</h1>
+            <div style="margin-top: 10px; display: flex; align-items: center; gap: 15px;">
+                <p style="margin: 0;">Published by <span id="demon-author" style="color: var(--text);">...</span></p>
+                <span id="level-id-tag">ID: Loading...</span>
+            </div>
+            <a id="play-link" href="#" target="_blank">
+                Play Level!
+            </a>
+        </div>
+
+        <div class="video-container">
+            <iframe id="video-frame" src="" allowfullscreen></iframe>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'records')">Records</button>
+            <button class="tab-btn" onclick="openTab(event, 'history')">Position History</button>
+        </div>
+
+        <div id="records" class="tab-content active">
+            <div id="records-list"></div>
+        </div>
+
+        <div id="history" class="tab-content">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Change</th>
+                        <th>New Position</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="/nav.js"></script>
+    <script>
+        const isImpossibleList = window.location.hostname.includes('impossible');
+
+        if (isImpossibleList) {
+            document.body.classList.add('impossible-list');
+        }
+
+        function openTab(evt, tabId) {
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].classList.remove("active");
+            }
+
+            const buttons = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove("active");
+            }
+
+            document.getElementById(tabId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        async function loadDemon() {
+            const pathSegments = window.location.pathname.split('/');
+            const dbKey = pathSegments[pathSegments.length - 1]; 
+
+            if (!dbKey || isNaN(dbKey)) return window.location.href = "/";
+
+            const res = await fetch(`/api/demons/${dbKey}`);
+            if (!res.ok) return document.body.innerHTML = "<h1>Level not found</h1>";
+            
+            const data = await res.json();
+            document.getElementById('main-content').style.display = 'block';
+            
+            document.getElementById('demon-name').innerText = `#${data.position} - ${data.name}`;
+            document.getElementById('demon-author').innerText = data.author;
+            document.getElementById('level-id-tag').innerText = `ID: ${data.level_id}`;
+
+            document.getElementById('play-link').href = `https://web-dashers.github.io/?id=${data.level_id}`;
+
+            if (data.showcase_link) {
+                let videoId = data.showcase_link.split('v=')[1]?.split('&')[0] || data.showcase_link.split('/').pop();
+                document.getElementById('video-frame').src = `https://www.youtube.com/embed/${videoId}`;
+            }
+
+            const list = document.getElementById('records-list');
+            list.innerHTML = data.records.map(r => {
+                let percentageColor = "";
+                if (r.percentage === 100) {
+                    percentageColor = isImpossibleList ? "#ff4444" : "#00e676";
+                } else {
+                    percentageColor = isImpossibleList ? "#ff6666" : "#ffaa00";
+                }
+
+                return `
+                    <div class="record-row">
+                        <span>
+                            <a href="/profile?user=${r.username}">${r.username}</a> 
+                            <span style="color:${percentageColor}"> - ${r.percentage}%</span>
+                        </span>
+                        <a href="${r.video_url}" target="_blank" class="proof">Watch</a>
+                    </div>
+                `;
+            }).join('') || "<p style='color:#666; padding: 15px;'>No records yet.</p>";
+
+            loadHistory(dbKey);
+        }
+
+        async function loadHistory(id) {
+            try {
+                const res = await fetch(`/api/demons/${id}/history`);
+                const history = await res.json();
+                const historyList = document.getElementById('history-list');
+
+                if (!history.length) {
+                    historyList.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#666;'>No history recorded.</td></tr>";
+                    return;
+                }
+
+                historyList.innerHTML = history.map(log => {
+                    const date = new Date(log.created_at).toLocaleDateString(undefined, {
+                        month: 'short', day: 'numeric', year: 'numeric'
+                    });
+                    let changeStr = "-";
+                    let reason = "Moved";
+                    let rowClass = "";
+
+                    const diff = log.old_position - log.new_position;
+
+                    if (log.change_type === 'added') {
+                        reason = "Added to list";
+                        rowClass = "row-added";
+                    } else if (log.change_type === 'shifted') {
+                        if (diff < 0) {
+                            changeStr = `-${Math.abs(diff)}`;
+                            reason = `<span class="b">${log.affected_by_name}</span> was added above`;
+                            rowClass = "row-down";
+                        } else {
+                            changeStr = `+${diff}`;
+                            reason = `<span class="b">${log.affected_by_name}</span> was moved down past this demon`;
+                            rowClass = "row-up";
+                        }
+                    } else if (log.change_type === 'moved') {
+                        if (diff < 0) {
+                            changeStr = `-${Math.abs(diff)}`;
+                            reason = "Lowered";
+                            rowClass = "row-down";
+                        } else {
+                            changeStr = `+${diff}`;
+                            reason = "Raised";
+                            rowClass = "row-up";
+                        }
+                    }
+
+                    return `
+                        <tr class="${rowClass}">
+                            <td>${date}</td>
+                            <td style="font-weight:bold;">${changeStr}</td>
+                            <td>${log.new_position}</td>
+                            <td>${reason}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("History failed to load:", err);
+            }
+        }
+
+        loadDemon();
+    </script>
+</body>
+</html>
