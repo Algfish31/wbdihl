@@ -583,7 +583,7 @@ app.post('/api/admin/update-record', isMod, async (req, res) => {
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 async function sendDiscordNotification(content) {
-    if (!DISCORD_WEBHOOK_URL) return; // Prevent crashes if webhook isn't configured
+    if (!DISCORD_WEBHOOK_URL) return;
     try {
         await fetch(DISCORD_WEBHOOK_URL, {
             method: 'POST',
@@ -1051,7 +1051,23 @@ app.get('/api/profile/:username', async (req, res) => {
         const user = userResult.rows[0];
 
         const recordsResult = await pool.query(`
-            SELECT r.percentage, r.video_url, d.name, d.position, d.requirement, d.id
+            SELECT 
+                r.id AS record_id,
+                r.percentage, 
+                r.video_url, 
+                d.name, 
+                d.position, 
+                d.requirement, 
+                d.id AS demon_id,
+                (
+                    SELECT COUNT(*) 
+                    FROM records r2 
+                    WHERE r2.demon_id = r.demon_id 
+                    AND r2.status = 'accepted' 
+                    AND r2.percentage = 100
+                    AND r2.list_type = $2 
+                    AND r2.id < r.id
+                ) AS completion_status
             FROM records r
             JOIN demons d ON r.demon_id = d.id
             WHERE r.user_id = $1 AND r.status = 'accepted' AND r.list_type = $2 AND d.list_type = $2
@@ -1062,7 +1078,9 @@ app.get('/api/profile/:username', async (req, res) => {
             const basePoints = 250 * Math.exp(-0.0263 * (r.position - 1));
             let awardedPoints = 0;
 
-            if (list === 'impossible') {
+            if (r.position > 150) {
+                awardedPoints = 0;
+            } else if (list === 'impossible') {
                 awardedPoints = basePoints * (r.percentage / 100);
             } else {
                 if (r.percentage === 100) {
@@ -1074,7 +1092,11 @@ app.get('/api/profile/:username', async (req, res) => {
                 }
             }
 
-            return { ...r, points: awardedPoints.toFixed(2) };
+            return { 
+                ...r, 
+                points: awardedPoints.toFixed(2),
+                record_id: r.record_id,
+            };
         });
 
         const totalPoints = recordsWithPoints.reduce((sum, r) => sum + parseFloat(r.points), 0).toFixed(2);
@@ -1134,6 +1156,8 @@ app.get('/api/leaderboard', async (req, res) => {
                     u.username,
                     SUM(
                         CASE 
+                            WHEN d.position > 150 THEN 0
+                            
                             WHEN $1 = 'impossible' 
                                 THEN (250 * EXP(-0.0263 * (d.position - 1))) * (r.percentage / 100.0)
                             ELSE

@@ -207,7 +207,12 @@
         .completed-link {
             text-decoration: none;
             transition: color 0.15s, opacity 0.15s;
-            color: white;   
+            color: white;
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
         }
 
         .completed-link:hover {
@@ -282,6 +287,105 @@
             font-size: 0.9em;
             margin: -6px 0 14px;
         }
+
+        .completion-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .completion-modal-overlay.visible {
+            display: flex;
+        }
+
+        .completion-modal {
+            width: min(100%, 460px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+            padding: 22px;
+        }
+
+        .completion-modal h4 {
+            margin: 0 0 20px;
+            font-size: 1.25em;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .completion-modal .modal-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.96em;
+        }
+
+        .completion-modal .modal-row:first-of-type {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .completion-modal .modal-key {
+            color: var(--text-muted);
+        }
+
+        .completion-modal .modal-value {
+            color: var(--text);
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .completion-modal .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .completion-modal .modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .completion-modal .modal-btn:hover {
+            border-color: var(--border);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .completion-modal .modal-close {
+            margin-right: auto;
+        }
+
+        .clickable-completion {
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .clickable-completion:hover {
+            color: var(--accent);
+            opacity: 0.95;
+        }
     </style>
 </head>
 <body>
@@ -336,6 +440,10 @@
                         <span class="stat-label">List Completions</span>
                         <span id="demon-count" style="font-size: 1.5em; font-weight: bold;">0</span>
                     </div>
+                    <div class="stat-item" id="hardest-stat">
+                        <span class="stat-label">Hardest</span>
+                        <span id="current-hardest" style="font-size: 1.5em; font-weight: bold;">N/A</span>
+                    </div>
                 </div>
             </div>
 
@@ -362,6 +470,28 @@
         <a href="/" class="back-link">Return to List</a>
     </main>
 
+    <div class="completion-modal-overlay" id="completion-modal-overlay" aria-hidden="true">
+        <div class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="completion-modal-title">
+            <h4 id="completion-modal-title">Level</h4>
+            <div class="modal-row">
+                <span class="modal-key">Status</span>
+                <span class="modal-value" id="completion-modal-status">N/A</span>
+            </div>
+            <div class="modal-row">
+                <span class="modal-key">Current placement</span>
+                <span class="modal-value" id="completion-modal-placement">N/A</span>
+            </div>
+            <div class="modal-row">
+                <span class="modal-key">Points earned</span>
+                <span class="modal-value" id="completion-modal-points">N/A</span>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-close" type="button" id="completion-modal-close">Close</button>
+                <a class="modal-btn" id="completion-modal-video" href="#" target="_blank" rel="noopener">Watch</a>
+            </div>
+        </div>
+    </div>
+
     <script src="/nav.js"></script>
     <script>
         const isImpossibleList = window.location.hostname.includes('impossible');
@@ -369,6 +499,8 @@
         if (isImpossibleList) {
             document.body.classList.add('impossible-list');
         }
+
+        let completedRecordsCache = [];
 
         function escapeHtml(str) {
             return String(str ?? '')
@@ -380,17 +512,28 @@
         }
 
         function getTier(position) {
-            const pos = parseInt(position);
+            const pos = parseInt(position, 10);
+            if (Number.isNaN(pos)) return 'legacy';
             if (pos <= 75) return 'main';
             if (pos <= 150) return 'extended';
             return 'legacy';
         }
 
-        function tierLabel(position) {
-            const tier = getTier(position);
-            if (tier === 'main') return 'Main';
-            if (tier === 'extended') return 'Extended';
-            return 'Legacy';
+        function getHardestRecord(records) {
+            const valid = Array.isArray(records)
+                ? records.filter(r => Number.isFinite(parseInt(r.position, 10)))
+                : [];
+            if (valid.length === 0) return null;
+
+            return valid.slice().sort((a, b) => {
+                const aPos = parseInt(a.position, 10) || Number.MAX_SAFE_INTEGER;
+                const bPos = parseInt(b.position, 10) || Number.MAX_SAFE_INTEGER;
+                if (aPos !== bPos) return aPos - bPos;
+
+                const aId = parseInt(a.record_id, 10) || 0;
+                const bId = parseInt(b.record_id, 10) || 0;
+                return bId - aId;
+            })[0];
         }
 
         function formatJoinedDate(joined) {
@@ -418,10 +561,115 @@
             }
         });
 
+        function ordinalSuffix(num) {
+            const n = Math.abs(parseInt(num, 10));
+            if (!Number.isFinite(n)) return '';
+            const mod100 = n % 100;
+            if (mod100 >= 11 && mod100 <= 13) return 'th';
+            switch (n % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        }
+
+        function getCompletionStatusLabel(status) {
+            const n = parseInt(status, 10);
+            if (Number.isNaN(n)) return 'Unknown';
+            if (n === 0) return 'Verifier';
+            return `${n}${ordinalSuffix(n)} Victor`;
+        }
+
+        function getPlacementLabel(position) {
+            const num = parseInt(position, 10);
+            if (Number.isNaN(num)) return 'N/A';
+
+            let tier;
+            if (num <= 75) {
+                tier = 'Main List';
+            } else if (num <= 150) {
+                tier = 'Extended List';
+            } else {
+                return "legacy List";
+            }
+
+            return `#${num}, ${tier}`;
+        }
+
+        function openCompletionModal({ name, placement, status, videoUrl, points }) {
+            const overlay = document.getElementById('completion-modal-overlay');
+            document.getElementById('completion-modal-title').innerText = name || 'Level';
+            document.getElementById('completion-modal-status').innerText = status || 'Unknown';
+            document.getElementById('completion-modal-placement').innerText = placement || 'N/A';
+            document.getElementById('completion-modal-points').innerText =
+                (points !== undefined && points !== null && points !== '') ? points : 'N/A';
+
+            const videoBtn = document.getElementById('completion-modal-video');
+            if (videoUrl) {
+                videoBtn.href = videoUrl;
+                videoBtn.style.display = 'inline-flex';
+            } else {
+                videoBtn.removeAttribute('href');
+                videoBtn.style.display = 'none';
+            }
+
+            overlay.classList.add('visible');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeCompletionModal() {
+            const overlay = document.getElementById('completion-modal-overlay');
+            overlay.classList.remove('visible');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCompletionModal();
+        });
+
+        document.addEventListener('click', (e) => {
+            const overlay = document.getElementById('completion-modal-overlay');
+            if (overlay && e.target === overlay) {
+                closeCompletionModal();
+                return;
+            }
+
+            if (e.target && e.target.closest && e.target.closest('#completion-modal-close')) {
+                closeCompletionModal();
+                return;
+            }
+        });
+
+        const completedContainer = document.getElementById('completed-levels');
+        if (completedContainer) {
+            completedContainer.addEventListener('click', (e) => {
+                const trigger = e.target.closest('[data-record-id]');
+                if (!trigger) return;
+
+                e.preventDefault();
+                const recordId = trigger.getAttribute('data-record-id');
+                const record = completedRecordsCache.find(r => String(r.record_id) === String(recordId));
+                if (record) {
+                    openCompletedLevelModal(record);
+                }
+            });
+        }
+
+        function openCompletedLevelModal(record) {
+            openCompletionModal({
+                name: record.name,
+                placement: getPlacementLabel(record.position),
+                status: getCompletionStatusLabel(record.completion_status),
+                videoUrl: record.video_url,
+                points: record.points
+            });
+        }
+
         async function loadProfile() {
             const params = new URLSearchParams(window.location.search);
             const username = params.get('user');
-            
+
             if (!username) {
                 window.location.href = "/";
                 return;
@@ -436,16 +684,17 @@
 
                 const data = await res.json();
                 document.getElementById('profile-display').style.display = 'block';
+
                 if (isImpossibleList) {
                     document.getElementById('completed-section').style.display = 'none';
                     document.getElementById('completions-stat').style.display = 'none';
                 }
-                
+
                 const lbTag = document.getElementById('leaderboard-tag');
                 const lbIcon = document.getElementById('trophy-icon');
                 const lbRankText = document.getElementById('leaderboard-rank');
-                
-                const rank = parseInt(data.leaderboardRank);
+
+                const rank = parseInt(data.leaderboardRank, 10);
                 const totalPoints = parseFloat(data.totalPoints);
 
                 if (totalPoints > 0 && rank > 0) {
@@ -468,7 +717,7 @@
                 const nameEl = document.getElementById('user-name');
                 const badgeEl = document.getElementById('role-badge');
                 const headerBox = document.getElementById('header-box');
-                
+
                 nameEl.innerText = data.username;
 
                 if (data.role === 'owner') {
@@ -496,9 +745,22 @@
                 document.getElementById('total-points').innerText = data.totalPoints;
 
                 const records = Array.isArray(data.records) ? data.records : [];
-                const completed = records.filter(r => parseInt(r.percentage) === 100);
-                const completedListWorthy = completed.filter(r => parseInt(r.position) <= 150);
-                const progress = records.filter(r => parseInt(r.percentage) !== 100);
+                const hardestRecord = getHardestRecord(records);
+                const hardestLabel = hardestRecord ? hardestRecord.name : 'N/A';
+                document.getElementById('current-hardest').innerText = hardestLabel;
+
+                const completed = records
+                    .filter(r => parseInt(r.percentage, 10) === 100)
+                    .sort((a, b) => {
+                        const aId = parseInt(a.record_id, 10) || 0;
+                        const bId = parseInt(b.record_id, 10) || 0;
+                        return bId - aId;
+                    });
+
+                completedRecordsCache = completed;
+
+                const completedListWorthy = completed.filter(r => parseInt(r.position, 10) <= 150);
+                const progress = records.filter(r => parseInt(r.percentage, 10) !== 100);
 
                 document.getElementById('demon-count').innerText = completedListWorthy.length;
 
@@ -518,14 +780,13 @@
                     completedContainer.innerHTML = completed.map((r, idx) => {
                         const tier = getTier(r.position);
                         const tierClass = tier === 'main' ? 'tier-main' : tier === 'extended' ? 'tier-extended' : 'tier-legacy';
-                        const label = tierLabel(r.position);
                         const safeName = escapeHtml(r.name);
-                        const safeVideo = escapeHtml(r.video_url);
+                        const safeRecordId = escapeHtml(r.record_id);
 
                         return `
-                            <a href="${safeVideo}" target="_blank" rel="noopener" class="completed-link ${tierClass}">
+                            <button type="button" data-record-id="${safeRecordId}" class="completed-link clickable-completion ${tierClass}">
                                 ${safeName}
-                            </a>${idx < completed.length - 1 ? '<span class="comma"> - </span>' : ''}
+                            </button>${idx < completed.length - 1 ? '<span class="comma"> - </span>' : ''}
                         `;
                     }).join('');
                 }
@@ -535,7 +796,7 @@
                     progressContainer.innerHTML = "<div class='section-empty'>No progress records.</div>";
                 } else {
                     progressContainer.innerHTML = progress.map(r => {
-                        const is100 = parseInt(r.percentage) === 100;
+                        const is100 = parseInt(r.percentage, 10) === 100;
                         let textPercColor = "";
 
                         if (is100) {
@@ -550,7 +811,7 @@
                             <div class="record-card ${borderClass}">
                                 <div>
                                     <span class="rank-tag">#${r.position}</span>
-                                    <a href="/demon/${r.id}" class="level-link">
+                                    <a href="/demon/${r.demon_id}" class="level-link">
                                         <span class="b">${escapeHtml(r.name)}</span>
                                     </a>
                                     <span style="color: ${textPercColor}; font-size: 0.9em;">

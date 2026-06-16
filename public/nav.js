@@ -117,8 +117,8 @@ async function loadFooter() {
             <div class="footer-section" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 160px;">
                 <h3 style="margin: 0 0 10px 0; font-size: 0.82em; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text, #fff); font-family: var(--font-display), sans-serif; font-weight: 700; opacity: 0.9;">Socials</h3>
                 <a href="https://discord.gg/Pz8TehUPmP" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">Discord Server</a>
-                <a href="https://youtube.com/@lasokar" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">YouTube</a>
-                <a href="https://reddit.com/user/lasokar" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 0; transition: color 0.15s;">Reddit</a>
+                <a href="https://github.com/lasokar/WBDL" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 6px; transition: color 0.15s;">GitHub Repo</a>
+                <a href="https://youtube.com/@lasokar" target="_blank" style="color: var(--text-muted, #888); text-decoration: none; font-size: 0.92em; margin-bottom: 0; transition: color 0.15s;">YouTube</a>
             </div>
 
             <div class="footer-section" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 160px;">
